@@ -4,6 +4,8 @@ import java.io.File;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,6 +19,7 @@ public class DragonCustom extends JavaPlugin {
 	private static PluginDescriptionFile pdffile;
 	public static String version;
 	public static String nombre;
+	public static String worldName;
 	
 	@Override
 	public void onLoad() {
@@ -37,6 +40,16 @@ public class DragonCustom extends JavaPlugin {
 		registerConfig();
 		registerEvents();
 		
+		
+		worldName = this.getConfig().getString("Config.mundo");
+		
+		Bukkit.getConsoleSender().sendMessage(nombre+ChatColor.WHITE+" Mundo donde esta el jefe custom: " + ChatColor.DARK_PURPLE + worldName);
+		
+		for(World world : Bukkit.getServer().getWorlds()) {
+			for(Entity entidad : world.getEntities()) {
+				CargarEntidades.analizarEntidad(entidad);
+			}
+		}
 		
 		
 		Bukkit.getConsoleSender().sendMessage(nombre+ChatColor.WHITE+" Ha sido activado (version: "+ChatColor.RED+version+ChatColor.WHITE+")");

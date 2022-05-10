@@ -38,7 +38,7 @@ public class CargarEntidades implements Listener  {
 			AutoTrack((Mob) entidad);
 		}
 		//Dragon
-		if(entidad instanceof EnderDragon) {
+		if(entidad instanceof EnderDragon & entidad.getWorld().getName().equals(DragonCustom.worldName)) {
 			EnderDragon dragon = (EnderDragon) entidad;
 			DragonDelEnd.FixearDragon(dragon);
 			DragonDelEnd.autoAtaque(dragon);

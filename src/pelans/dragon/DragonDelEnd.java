@@ -59,7 +59,7 @@ public class DragonDelEnd implements Listener {
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void RecibirDaño(EntityDamageByEntityEvent event) {
-		if(event.getEntityType().equals(EntityType.ENDER_DRAGON)) {
+		if(event.getEntityType().equals(EntityType.ENDER_DRAGON) & event.getEntity().getWorld().getName().equals(DragonCustom.worldName)) {
 			EnderDragon mob = (EnderDragon) event.getEntity();
 			//Bukkit.getConsoleSender().sendMessage("Vida: " + mob.getHealth() + "-" + event.getFinalDamage());;
 			if(mob.getScoreboardTags().contains("Fase 1") & mob.getHealth()/mob.getMaxHealth() < 5.0/6) {
@@ -112,7 +112,7 @@ public class DragonDelEnd implements Listener {
 		}
 		if(event.getDamager().getType().equals(EntityType.FIREBALL)) {
 			Fireball fireball = (Fireball) event.getDamager();
-			if(fireball.getShooter() instanceof Ghast & !hasBeenPreviouslyDragonKilled() & fireball.getWorld().getName().equals("world_the_end"))
+			if(fireball.getShooter() instanceof Ghast & !hasBeenPreviouslyDragonKilled() & fireball.getWorld().getName().equals(DragonCustom.worldName))
 				if(event.getEntity() instanceof LivingEntity) {
 					event.setDamage(event.getDamage()*6);
 					LivingEntity mob = (LivingEntity) event.getEntity();
@@ -137,7 +137,7 @@ public class DragonDelEnd implements Listener {
 	private static void InvocarPhantom(Location cords) {
 		Phantom phantom = (Phantom) cords.getWorld().spawnEntity(cords, EntityType.PHANTOM);
 		phantom.addScoreboardTag("BatallaDragon");
-		phantom.addScoreboardTag("AutoTrack");
+		CargarEntidades.AutoTrack(phantom);
 		phantom.setPersistent(true);
 		phantom.setRemoveWhenFarAway(false);
 		int res = 80;
@@ -197,13 +197,13 @@ public class DragonDelEnd implements Listener {
 	@EventHandler
     public void SpawneoDeMobs(CreatureSpawnEvent event) {
 		LivingEntity entidad = event.getEntity();
-		if(entidad instanceof Enderman & entidad.getWorld().getName().equals("world_the_end")) {
+		if(entidad instanceof Enderman & entidad.getWorld().getName().equals(DragonCustom.worldName)) {
 			if (!hasBeenPreviouslyDragonKilled()) {
 				entidad.addScoreboardTag("BatallaDragon");
 				entidad.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,Integer.MAX_VALUE,1));
 			}
 		}
-		else if( entidad instanceof EnderDragon & entidad.getWorld().getName().equals("world_the_end")) {
+		else if( entidad instanceof EnderDragon & entidad.getWorld().getName().equals(DragonCustom.worldName)) {
 			FixearDragon((EnderDragon) entidad);
 		}
 	} 
@@ -224,7 +224,7 @@ public class DragonDelEnd implements Listener {
 	
 	 @EventHandler
 		public void NoUsarDurabilidad(PlayerItemDamageEvent event) {
-	    	if(event.getPlayer().getWorld().getName().equals("world_the_end") & !hasBeenPreviouslyDragonKilled()) {
+	    	if(event.getPlayer().getWorld().getName().equals(DragonCustom.worldName) & !hasBeenPreviouslyDragonKilled()) {
 	    		event.setCancelled(true);
 	    	}
 	    }
@@ -233,11 +233,12 @@ public class DragonDelEnd implements Listener {
 	
 	
 	private boolean hasBeenPreviouslyDragonKilled() {
-		World end = Bukkit.getServer().getWorld("world_the_end");
+		World end = Bukkit.getServer().getWorld(DragonCustom.worldName);
     	if(end !=null) {
 	    	DragonBattle batalla = end.getEnderDragonBattle();
 	    	return batalla.hasBeenPreviouslyKilled();
     	}
+    	Bukkit.getConsoleSender().sendMessage("No se ha encontrado el mundo");
 	    return true;
 		
 	}
@@ -451,7 +452,7 @@ public class DragonDelEnd implements Listener {
 	
     @EventHandler
     public void ExplotarEnderCrystal(EntityDamageEvent event) {
-    	if(event.getEntityType().equals(EntityType.ENDER_CRYSTAL) && event.getEntity().getWorld().getName().equals("world_the_end")) {
+    	if(event.getEntityType().equals(EntityType.ENDER_CRYSTAL) && event.getEntity().getWorld().getName().equals(DragonCustom.worldName)) {
     		DragonBattle batalla = event.getEntity().getWorld().getEnderDragonBattle();
     		if(!batalla.hasBeenPreviouslyKilled()) {
 	    		EnderCrystal entidad = (org.bukkit.entity.EnderCrystal) event.getEntity();
