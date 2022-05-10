@@ -62,42 +62,64 @@ public class DragonDelEnd implements Listener {
 		if(event.getEntityType().equals(EntityType.ENDER_DRAGON) & event.getEntity().getWorld().getName().equals(DragonCustom.worldName)) {
 			EnderDragon mob = (EnderDragon) event.getEntity();
 			//Bukkit.getConsoleSender().sendMessage("Vida: " + mob.getHealth() + "-" + event.getFinalDamage());;
-			if(mob.getScoreboardTags().contains("Fase 1") & mob.getHealth()/mob.getMaxHealth() < 5.0/6) {
+			if(mob.getScoreboardTags().contains("Fase 1") & mob.getHealth()/mob.getMaxHealth() < 9.0/10) {
 				mob.removeScoreboardTag("Fase 1");
 				mob.addScoreboardTag("Fase 2");
 				summonCirculo(mob.getWorld(),"Bob",true,0);
 			}
-			else if(mob.getScoreboardTags().contains("Fase 2") & mob.getHealth()/mob.getMaxHealth() < 4.0/6) {
+			else if(mob.getScoreboardTags().contains("Fase 2") & mob.getHealth()/mob.getMaxHealth() < 8.0/10) {
 				mob.removeScoreboardTag("Fase 2");
 				mob.addScoreboardTag("Fase 3");
 				summonCirculo(mob.getWorld(),"Rich",true,0);
 			}
-			else if(mob.getScoreboardTags().contains("Fase 3") & mob.getHealth()/mob.getMaxHealth() < 3.0/6) {
+			else if(mob.getScoreboardTags().contains("Fase 3") & mob.getHealth()/mob.getMaxHealth() < 7.0/10) {
 				mob.removeScoreboardTag("Fase 3");
 				mob.addScoreboardTag("Fase 4");
-				summonCirculo(mob.getWorld(),"EnderCrystal",true,0);
+				summonCirculo(mob.getWorld(),"Bob",true,0);
+				summonCirculo(mob.getWorld(),"Rich",false,0);
 			}
-			else if(mob.getScoreboardTags().contains("Fase 4") & mob.getHealth()/mob.getMaxHealth() < 2.0/6) {
+			else if(mob.getScoreboardTags().contains("Fase 4") & mob.getHealth()/mob.getMaxHealth() < 6.0/10) {
 				mob.removeScoreboardTag("Fase 4");
 				mob.addScoreboardTag("Fase 5");
 				summonCirculo(mob.getWorld(),"Bob",true,0);
 				summonCirculo(mob.getWorld(),"Rich",false,0);
 			}
-			else if(mob.getScoreboardTags().contains("Fase 5") & mob.getHealth()/mob.getMaxHealth() < 1.0/6) {
+			else if(mob.getScoreboardTags().contains("Fase 5") & mob.getHealth()/mob.getMaxHealth() < 5.0/10) {
 				mob.removeScoreboardTag("Fase 5");
 				mob.addScoreboardTag("Fase 6");
+				summonCirculo(mob.getWorld(),"EnderCrystal",true,0);
+			}
+			else if(mob.getScoreboardTags().contains("Fase 6") & mob.getHealth()/mob.getMaxHealth() < 4.0/10) {
+				mob.removeScoreboardTag("Fase 6");
+				mob.addScoreboardTag("Fase 7");
+				summonCirculo(mob.getWorld(),"InvocarPhantomBob",true,0);
+			}
+			else if(mob.getScoreboardTags().contains("Fase 7") & mob.getHealth()/mob.getMaxHealth() < 3.0/10) {
+				mob.removeScoreboardTag("Fase 7");
+				mob.addScoreboardTag("Fase 8");
+				summonCirculo(mob.getWorld(),"InvocarPhantomRich",true,0);
+			}
+			else if(mob.getScoreboardTags().contains("Fase 8") & mob.getHealth()/mob.getMaxHealth() < 2.0/10) {
+				mob.removeScoreboardTag("Fase 8");
+				mob.addScoreboardTag("Fase 9");
+				summonCirculo(mob.getWorld(),"InvocarPhantomRich",false,0);
+				summonCirculo(mob.getWorld(),"InvocarPhantomBob",true,0);
+			}
+			else if(mob.getScoreboardTags().contains("Fase 9") & mob.getHealth()/mob.getMaxHealth() < 1.0/10) {
+				mob.removeScoreboardTag("Fase 9");
+				mob.addScoreboardTag("Fase 10");
 				summonCirculo(mob.getWorld(),"Bob",true,-2);
 				summonCirculo(mob.getWorld(),"Rich",false,0);
 				summonCirculo(mob.getWorld(),"EnderCrystal",true,2);
 				arreglarBossBar(mob);
-				mob.setMaxHealth(300);
-				mob.setHealth(mob.getHealth()+50);
+				mob.setMaxHealth(600);
+				mob.setHealth(mob.getHealth()+300);
 			}
 			if(mob.getScoreboardTags().contains("Fase 6")) {
 				Random rand = new Random();
-				int azar = rand.nextInt(4);
+				int azar = rand.nextInt(6);
 				if(azar == 0) {
-					InvocarPhantom(mob.getLocation().clone().add(0,5,0));
+					InvocarPhantom(mob.getLocation().clone().add(0,5,0),18);
 				}
 				else if(azar == 1) {
 					InvocarGhast(mob.getLocation().clone().add(0,5,0));
@@ -107,6 +129,12 @@ public class DragonDelEnd implements Listener {
 				}
 				else if(azar == 3) {
 					InvocarBob(mob.getLocation().clone().add(0,5,0));
+				}
+				else if(azar == 4) {
+					InvocarPhantomBob(mob.getLocation().clone().add(0,5,0));
+				}
+				else if(azar == 5) {
+					InvocarPhantomRich(mob.getLocation().clone().add(0,5,0));
 				}
 			}
 		}
@@ -132,9 +160,21 @@ public class DragonDelEnd implements Listener {
 				event.setCancelled(true);
 	}
 	
+	private static void InvocarPhantomRich(Location cords) {
+		Phantom phantom = InvocarPhantom(cords, 1);
+		Skeleton skeleton = InvocarRich(cords);
+		phantom.addPassenger(skeleton);
+	}
+	
+	private static void InvocarPhantomBob(Location cords) {
+		Phantom phantom = InvocarPhantom(cords, 1);
+		WitherSkeleton witherSkeleton = InvocarBob(cords);
+		phantom.addPassenger(witherSkeleton);
+	}
+	
 	
 	@SuppressWarnings("deprecation")
-	private static void InvocarPhantom(Location cords) {
+	private static Phantom InvocarPhantom(Location cords, int size) {
 		Phantom phantom = (Phantom) cords.getWorld().spawnEntity(cords, EntityType.PHANTOM);
 		phantom.addScoreboardTag("BatallaDragon");
 		CargarEntidades.AutoTrack(phantom);
@@ -143,7 +183,8 @@ public class DragonDelEnd implements Listener {
 		int res = 80;
 		phantom.setMaxHealth(res);
 		phantom.setHealth(res);
-		phantom.setSize(18);
+		phantom.setSize(size);
+		return phantom;
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -157,8 +198,8 @@ public class DragonDelEnd implements Listener {
 	}
 	
 	
-	private static void InvocarRich(Location cords) {
-		LivingEntity mob = (LivingEntity) cords.getWorld().spawnEntity(cords, EntityType.SKELETON);
+	private static Skeleton InvocarRich(Location cords) {
+		Skeleton mob = (Skeleton) cords.getWorld().spawnEntity(cords, EntityType.SKELETON);
 		MobSpawning.Rich2012((Skeleton) mob);
 		mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING,Integer.MAX_VALUE,5));
 		mob.setGravity(false);
@@ -174,10 +215,11 @@ public class DragonDelEnd implements Listener {
 			}
 		}.runTaskLater(DragonCustom.plugin, 20*8);
 		WitherBoss.SkeletonMinionWitherBoss((Mob) mob);
+		return mob;
 	}
 	
-	private static void InvocarBob(Location cords) {
-		LivingEntity mob = (LivingEntity) cords.getWorld().spawnEntity(cords, EntityType.WITHER_SKELETON);
+	private static WitherSkeleton InvocarBob(Location cords) {
+		WitherSkeleton mob = (WitherSkeleton) cords.getWorld().spawnEntity(cords, EntityType.WITHER_SKELETON);
 		MobSpawning.Bob((WitherSkeleton) mob);
 		mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING,Integer.MAX_VALUE,5));
 		mob.setPersistent(true);
@@ -192,6 +234,7 @@ public class DragonDelEnd implements Listener {
 				CargarEntidades.AutoTrack((Mob) mob);
 			}
 		}.runTaskLater(DragonCustom.plugin, 20*8);
+		return mob;
 	}
 	
 	@EventHandler
@@ -246,8 +289,8 @@ public class DragonDelEnd implements Listener {
 	@SuppressWarnings("deprecation")
 	public static void FixearDragon(EnderDragon dragon) {
 		if(!dragon.getDragonBattle().hasBeenPreviouslyKilled() && !dragon.getScoreboardTags().contains("CambiarEnd")) {
-			dragon.setMaxHealth(600);
-			dragon.setHealth(600);
+			dragon.setMaxHealth(1200);
+			dragon.setHealth(1200);
 			dragon.addScoreboardTag("CambiarEnd");
 			dragon.addScoreboardTag("Fase 1");
 			dragon.addScoreboardTag("BatallaDragon");
@@ -285,12 +328,12 @@ public class DragonDelEnd implements Listener {
 		//bar.setTitle(ChatColor.translateAlternateColorCodes('&', "&4&lPermaSpect &6&lDemon &k&mLite"));
 		//bar.setTitle(ChatColor.translateAlternateColorCodes('&', "&a&ka&c&lPelans &4&l3D&a&ka")); 
 		bar.removeFlag(BarFlag.CREATE_FOG);
-		if(dragon.getScoreboardTags().contains("Fase 6")) {
+		if(dragon.getScoreboardTags().contains("Fase 10")) {
 			bar.setColor(BarColor.RED);
 			bar.setStyle(BarStyle.SOLID);
 		}
 		else {
-			bar.setStyle(BarStyle.SEGMENTED_6);
+			bar.setStyle(BarStyle.SEGMENTED_10);
 		}
 		
 	}
@@ -447,6 +490,10 @@ public class DragonDelEnd implements Listener {
     		}
     		else if(caso.equals("EnderCrystal"))
     			world.spawnEntity(cord, EntityType.ENDER_CRYSTAL);
+    		else if(caso.equals("InvocarPhantomRich"))
+    			InvocarPhantomRich(cord);
+    		else if(caso.equals("InvocarPhantomBob"))
+    			InvocarPhantomBob(cord);
     	}
 	}
 	
@@ -463,7 +510,7 @@ public class DragonDelEnd implements Listener {
 		        		Location cord = event.getEntity().getWorld().getEnderDragonBattle().getEndPortalLocation();
 		        		cord.add(0,20,0);
 		        		InvocarGhast(cord);
-		        		InvocarPhantom(cord);
+		        		InvocarPhantom(cord,18);
 		        	}
 	    		}
     		}

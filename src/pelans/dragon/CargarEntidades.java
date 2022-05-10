@@ -55,7 +55,7 @@ public class CargarEntidades implements Listener  {
 				if(mob.isDead())
 					this.cancel();
 				if (mob.getTarget() == null)
-					for(Entity entidad :mob.getNearbyEntities(50, 50, 50)) 
+					for(Entity entidad :mob.getNearbyEntities(35, 100, 35)) 
 						if(entidad instanceof Player) {
 							Player jugador = (Player) entidad;
 							if(jugador.getGameMode() == GameMode.SURVIVAL) {
