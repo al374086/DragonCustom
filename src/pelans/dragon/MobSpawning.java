@@ -39,7 +39,7 @@ public class MobSpawning{
 		sm.setOwningPlayer(jugador);
 		item.setItemMeta(sm);
 		bob.getEquipment().setHelmet(item);
-		bob.getEquipment().setHelmetDropChance(0.06f);
+		bob.getEquipment().setHelmetDropChance(0.08f);
 		
 		stack = new ItemStack(Material.LEATHER_CHESTPLATE);
 		LeatherArmorMeta meta = (LeatherArmorMeta) stack.getItemMeta();
@@ -82,7 +82,7 @@ public class MobSpawning{
 		sm.setOwningPlayer(jugador);
 		item.setItemMeta(sm);
 		rich2012.getEquipment().setHelmet(item);
-		rich2012.getEquipment().setHelmetDropChance(0.06f);
+		rich2012.getEquipment().setHelmetDropChance(0.08f);
 		
 		stack = new ItemStack(Material.LEATHER_CHESTPLATE);
 		LeatherArmorMeta meta = (LeatherArmorMeta) stack.getItemMeta();
