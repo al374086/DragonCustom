@@ -1,39 +1,18 @@
 package pelans.dragon;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
-import org.bukkit.entity.AreaEffectCloud;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.Enderman;
-import org.bukkit.entity.Endermite;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.FallingBlock;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Ghast;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Mob;
-import org.bukkit.entity.Phantom;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Skeleton;
-import org.bukkit.entity.TNTPrimed;
-import org.bukkit.entity.WitherSkeleton;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
@@ -51,8 +30,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import pelans.DragonCustom;
-
-import org.bukkit.entity.EnderCrystal;
+import pelans.Util.Particulas;
 
 public class DragonDelEnd implements Listener {
 	
@@ -296,6 +274,7 @@ public class DragonDelEnd implements Listener {
 			dragon.addScoreboardTag("BatallaDragon");
 			arreglarBossBar(dragon);
 			autoAtaque(dragon);
+			autoAtaque2(dragon);
 			World end = dragon.getWorld();
 			int x, y, z;
 			for ( x=-200;x<=200;x++) {
@@ -319,6 +298,7 @@ public class DragonDelEnd implements Listener {
 		else if(!dragon.getDragonBattle().hasBeenPreviouslyKilled()){
 			arreglarBossBar(dragon);
 			autoAtaque(dragon);
+			autoAtaque2(dragon);
 		}
 	}
 	
@@ -532,6 +512,7 @@ public class DragonDelEnd implements Listener {
 				for(Entity entidad :dragon.getNearbyEntities(300, 300, 300)) 
 					if(entidad instanceof Player) {
 						Player jugador = (Player) entidad;
+						hayJugador = true;
 						if(jugador.getGameMode() == GameMode.SURVIVAL)
 							hayJugador = true;
 					}
@@ -555,8 +536,331 @@ public class DragonDelEnd implements Listener {
 					}
 				}
 			}
-		}.runTaskTimer(DragonCustom.plugin, 20*15, 20*1);
+		}.runTaskTimer(DragonCustom.plugin, 20*15, 20);
     }
-	
 
+	public static void autoAtaque2(EnderDragon dragon) {
+		new BukkitRunnable() {
+			int ataqueLaser = 55;
+			int ataqueBola = 120;
+			int ataqueTNT = 30;
+			int ataqueBuff = 90;
+			int ataqueVolar = 20;
+			int ataqueBolas = 40;
+			boolean renderDra = false;
+			int r = 1;
+			@Override
+			public void run() {
+				if(dragon.isDead())
+					this.cancel();
+				boolean hayJugador = false;
+				for(Entity entidad :dragon.getNearbyEntities(300, 300, 300))
+					if(entidad instanceof Player) {
+						hayJugador = true;
+						break;
+					}
+				for(Entity ent : dragon.getNearbyEntities(300, 300, 300)) {
+					if(renderDra) {
+						break;
+					}
+					if(ent instanceof EnderDragon) {
+						if(ent.getScoreboardTags().contains("etapa_final")) {
+							renderDra = true;
+							break;
+						}
+					}
+				}
+				if(renderDra) {
+					r = 2;
+				}
+				if(hayJugador) { //Si hay un jugador, realizar ataques
+					Random rand = new Random();
+					if(ataqueLaser--==0) { //Lanza un laser que quita mucho
+						MasAtaques.ataqueLaser(dragon);
+						ataqueLaser = (60 + rand.nextInt(30) - 14)/r;
+					}
+					if(ataqueBola--==0) { //Lanza una bola de ghast al jugador
+						MasAtaques.ataqueBola(dragon);
+						ataqueBola = (120 + rand.nextInt(80) - 39)/r;
+					}
+					if(ataqueTNT--==0) { //Ataque de TNT
+						MasAtaques.ataqueTNT(dragon);
+						ataqueTNT = (30 + rand.nextInt(30) - 14)/r;
+					}
+					if(ataqueBuff--==0) { //Añade effectos de pocion a los mobs con la tag de Mystic_Mob
+						MasAtaques.ataqueBuff(dragon.getWorld(), rand.nextInt(20) + 30, rand.nextInt(4) + 2 , rand.nextInt(3)+1);
+						ataqueBuff = (90 + rand.nextInt(60) - 29)/r;
+					}
+					if(ataqueVolar--==0) { //Manda un laser a el jugador mas cercano y lo manda a volar
+						MasAtaques.ataqueVolar(dragon);
+						ataqueVolar = (20 + rand.nextInt(50) - 14)/r;
+					}
+					if (ataqueBolas--==0) {//lanza una bola de dragon por cada jugador 5 veces
+						MasAtaques.ataqueBolas(dragon);
+						ataqueBolas = (40 + rand.nextInt(60) - 14)/r;
+					}
+				}
+			}
+		}.runTaskTimer(DragonCustom.plugin, 2022, 20);
+	}
+
+
+	@SuppressWarnings("deprecation")
+	public static class MasAtaques {
+
+		public static void ataqueBolas(EnderDragon dragon){
+			dragon.getWorld().playSound(dragon.getLocation(), Sound.ENTITY_GHAST_SHOOT, SoundCategory.HOSTILE, 10, 1);
+			Location LocN = dragon.getLocation();
+			World w = dragon.getWorld();
+			for(Entity ent : w.getNearbyEntities(LocN, 300, 300, 300)) {
+				if(ent instanceof Player) {
+					for(int i=0;i<5;i++) {
+						new BukkitRunnable() {
+							@Override
+							public void run() {
+								Location target = ent.getLocation();
+								Location Loc = dragon.getLocation();
+								Vector dragonV = new Vector(Loc.getX(), Loc.getY(), Loc.getZ());
+								Vector targetV = new Vector(target.getX(), target.getY(), target.getZ());
+								Vector vec = targetV.subtract(dragonV);
+								DragonFireball fireball = (DragonFireball)w.spawnEntity(Loc, EntityType.DRAGON_FIREBALL);
+								fireball.setDirection(vec);
+							}
+						}.runTaskLater(DragonCustom.plugin, i*10);
+
+					}
+
+				}
+			}
+		}
+
+		public static void ataqueVolar(EnderDragon dragon){
+			dragon.getWorld().playSound(dragon.getLocation(), Sound.ENTITY_SNOWBALL_THROW, SoundCategory.HOSTILE, 10, 0);
+			Location dragonLoc = dragon.getLocation();
+			World w = dragonLoc.getWorld();
+			ArrayList<Location> targets = new ArrayList<>();
+			assert w != null;
+
+			for (Entity ent : w.getNearbyEntities(dragonLoc, 300, 300, 300)) {
+				if (ent instanceof LivingEntity && ent.getType() == EntityType.PLAYER) {
+					targets.add(ent.getLocation());
+				}
+			}
+
+			for(Location loc : targets){
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						int R,G,B;
+						R=0;
+						G=255;
+						B=0;
+						if (loc == null) return;
+						double d = loc.distance(dragonLoc);
+						for (int i = 0; i < (int) d * 5; i++) {
+							Color laserColor = Color.fromRGB(R, G, B);
+							Location tempLoc = loc.clone();
+							tempLoc.setX(dragonLoc.getX() + (i * ((loc.getX() - dragonLoc.getX()) / (d * 5))));
+							tempLoc.setY(dragonLoc.getY() + (i * ((loc.getY() - dragonLoc.getY()) / (d * 5))));
+							tempLoc.setZ(dragonLoc.getZ() + (i * ((loc.getZ() - dragonLoc.getZ()) / (d * 5))));
+
+							Particulas.spawnParticles(w, Particle.REDSTONE, loc, 50, 1, new Particle.DustOptions(laserColor, 0.5f), false);
+
+							if(laserColor.getGreen() >= 1) {
+								int a;
+								a = laserColor.getGreen();
+								G = a-1;
+							}
+							for (Entity ent : w.getNearbyEntities(tempLoc, 0.5, 0.5, 0.5)) {
+								if (ent instanceof LivingEntity && ent != dragon) {
+									Vector vec = new Vector(ent.getVelocity().getX(),5,ent.getVelocity().getZ());
+									ent.setVelocity(vec);
+								}
+							}
+						}
+					}
+				}.runTask(DragonCustom.plugin);
+
+			}
+
+		}
+
+		public static void ataqueBuff(World world, int tiempo, int fuerza, int resistencia){
+			Location center = new Location(world,0,world.getHighestBlockYAt(0, 0),0);
+			world.playSound(center, Sound.BLOCK_BELL_RESONATE, SoundCategory.HOSTILE, 10, 0);
+			new BukkitRunnable() {@Override public void run() {world.playSound(center, Sound.BLOCK_BELL_USE, SoundCategory.HOSTILE, 10, 0);}}.runTaskLater(DragonCustom.plugin, 80);
+			for(Entity ent : world.getNearbyEntities(center, 300, 300, 300)) {
+				if(ent.getScoreboardTags().contains("Mystic_Mob") && !ent.getScoreboardTags().contains("Mystic_Wither")) {
+					try {
+						LivingEntity mob = (LivingEntity)ent;
+						mob.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, tiempo*20, fuerza, true, true, true));
+						mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, tiempo*20, fuerza, true, true, true));
+						mob.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, tiempo*20, 1, true, true, true));
+						mob.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, tiempo*20, resistencia, true, true, true));
+					}catch(Exception ignored) {
+
+					}
+				}
+			}
+		}
+
+		public static void ataqueLaser(EnderDragon dragon){
+			dragon.getWorld().playSound(dragon.getLocation(), Sound.ENTITY_BLAZE_SHOOT, SoundCategory.HOSTILE, 10, 2);
+			Location dragonLoc = dragon.getLocation();
+			World w = dragonLoc.getWorld();
+			ArrayList<Location> targets = new ArrayList<>();
+			assert w != null;
+			for (Entity ent : w.getNearbyEntities(dragonLoc, 300, 300, 300)) {
+				if (ent instanceof LivingEntity && ent.getType() == EntityType.PLAYER) {
+					targets.add(ent.getLocation());
+				}
+			}
+			for(Location loc : targets){
+				if (randomBoleamWithPlayers(w)){
+					new BukkitRunnable() {
+						@Override
+						public void run() {
+							int R,G,B;
+							R = 112;
+							G = 65;
+							B = 144;
+							if (loc == null) return;
+							double d = loc.distance(dragonLoc);
+							boolean b = false;
+							for (int i = 0; i < (int) d * 5; i++) {
+								Color laserColor = Color.fromRGB(R, G, B);
+								Location tempLoc = loc.clone();
+								tempLoc.setX(dragonLoc.getX() + (i * ((loc.getX() - dragonLoc.getX()) / (d * 5))));
+								tempLoc.setY(dragonLoc.getY() + (i * ((loc.getY() - dragonLoc.getY()) / (d * 5))));
+								tempLoc.setZ(dragonLoc.getZ() + (i * ((loc.getZ() - dragonLoc.getZ()) / (d * 5))));
+
+
+								Particulas.spawnParticles(w, Particle.REDSTONE, loc, 50, 1, new Particle.DustOptions(laserColor, 0.5f), false);
+
+								if(laserColor.getRed() <= 254) {
+									int a;
+									a = laserColor.getRed();
+									R = a+1;
+								}
+
+								for (Entity ent : w.getNearbyEntities(tempLoc, 0.5, 0.5, 0.5)) {
+									if (ent instanceof LivingEntity && ent != dragon) {
+										if(!b) {
+											((LivingEntity)ent).damage(25, dragon);
+											b = true;
+										}
+
+									}
+								}
+								if(b) break;
+							}
+							TNTPrimed tnt = (TNTPrimed)loc.getWorld().spawnEntity(loc, EntityType.PRIMED_TNT);
+							tnt.getScoreboardTags().add("realista");
+							tnt.setFuseTicks(0);
+						}
+					}.runTask(DragonCustom.plugin);
+				}
+			}
+
+		}
+
+		public static void ataqueTNT(EnderDragon dragon){ //mejorar
+			dragon.getWorld().playSound(dragon.getLocation(), Sound.ENTITY_TNT_PRIMED, SoundCategory.HOSTILE, 10, 2);
+			World world = dragon.getWorld();
+			Location center = new Location(world,0,world.getHighestBlockYAt(0, 0),0);
+			for(Entity ent : world.getNearbyEntities(center, 300, 300, 300)) {
+				if(ent instanceof Player) {
+					Location tempLoc = ent.getLocation();
+					tempLoc.setY(tempLoc.getY()+15);
+					TNTPrimed tnt = (TNTPrimed)world.spawnEntity(tempLoc, EntityType.PRIMED_TNT);
+					tnt.getScoreboardTags().add("realista");
+					tnt.getScoreboardTags().add("Mystic_Mob");
+					tnt.setFuseTicks(30);
+					tnt.setVelocity(new Vector(0,-0.5,0));
+				}
+			}
+		}
+
+		public static void ataqueBola(EnderDragon dragon){ //mejorar
+			dragon.getWorld().playSound(dragon.getLocation(), Sound.ENTITY_GHAST_SHOOT, SoundCategory.HOSTILE, 10, 1);
+			Location dragonLoc = dragon.getLocation();
+			World w = dragonLoc.getWorld();
+			ArrayList<Location> targets = new ArrayList<>();
+			assert w != null;
+			for (Entity ent : w.getNearbyEntities(dragonLoc, 300, 300, 300)) {
+				if (ent instanceof LivingEntity && ent.getType() == EntityType.PLAYER) {
+					targets.add(ent.getLocation());
+				}
+			}
+			for(Location target : targets){
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						Location dragonLoc2 = new Location(dragonLoc.getWorld(),dragonLoc.getX(),dragonLoc.getY(),dragonLoc.getZ());
+						Fireball fireball = (Fireball) dragon.getWorld().spawnEntity(dragonLoc2, EntityType.FIREBALL);
+						Vector dragonV = new Vector(dragonLoc.getX(), dragonLoc.getY(), dragonLoc.getZ());
+						Vector targetV = new Vector(target.getX(), target.getY(), target.getZ());
+						Vector vec = targetV.subtract(dragonV);
+						fireball.setDirection(vec);
+						fireball.getScoreboardTags().add("ataque2");
+					}
+				}.runTask(DragonCustom.plugin);
+			}
+
+		}
+
+		public static void ataqueLluvia(EnderDragon dragon){
+			World w = dragon.getWorld();
+			Location l = new Location(w, 0, 90, 0);
+			List<Location> Ll = new ArrayList<>();
+			Ll.add(new Location(w, 0.5, 64, 15.5));
+			Ll.add(new Location(w, 15.5, 64, 0.5));
+			Ll.add(new Location(w, -14.5, 64, 0.5));
+			Ll.add(new Location(w, 0.5, 64, -14.5));
+			new BukkitRunnable() {
+				double porcentaje = 0;
+				@Override
+				public void run() {
+					for(Location tempL : Ll) {
+						Particulas.pintarLinea(tempL, l, porcentaje);
+					}
+					if(porcentaje >= 1) {
+						ataqueContinuacion_AtaqueLluvia(l);
+						this.cancel();
+					}
+					Bukkit.broadcastMessage(String.valueOf(porcentaje));
+					porcentaje += 0.03;
+				}
+			}.runTaskTimer(DragonCustom.plugin, 0, 5);
+		}
+
+		public static void ataqueContinuacion_AtaqueLluvia(Location l) { //mejorar
+			l.getWorld().playSound(l, Sound.WEATHER_RAIN, SoundCategory.HOSTILE, 10, 0);
+			int x,z;
+			for(x=-200;x<=200;x++) {
+				for( z=-200;z<=200;z++) {
+					Location cord = new Location(l.getWorld(),x,l.getY(),z);
+					if(cord.getBlock().getType().equals(Material.AIR)) {
+						Random rand = new Random(); //instance of random class
+						int int_random = rand.nextInt(6);
+						if(int_random == 0) {
+							FallingBlock fb = cord.getWorld().spawnFallingBlock(cord, Material.COBBLESTONE.createBlockData());
+							fb.setHurtEntities(true);
+							fb.setDropItem(false);
+							fb.getScoreboardTags().add("cancelar");
+							fb.getScoreboardTags().add("rain_block");
+						}
+					}
+				}
+			}
+		}
+
+		private static Boolean randomBoleamWithPlayers(World w){
+			int cantidadJugadores = w.getPlayers().size();
+			if(cantidadJugadores >= 5){
+				Random rand = new Random();
+				return rand.nextBoolean();
+			}else return true;
+		}
+	}
 }
