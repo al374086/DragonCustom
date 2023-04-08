@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
@@ -12,6 +13,7 @@ import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,16 +29,20 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 
 import pelans.DragonCustom;
+import pelans.Util.DependencyManager;
 import pelans.Util.Particulas;
+import pelans.dependencies.FAWEHook;
 
 public class DragonDelEnd implements Listener {
 	
 	@SuppressWarnings("deprecation")
 	@EventHandler
-	public void RecibirDaño(EntityDamageByEntityEvent event) {
+	public void RecibirDano(EntityDamageByEntityEvent event) {
 		if(event.getEntityType().equals(EntityType.ENDER_DRAGON) & event.getEntity().getWorld().getName().equals(DragonCustom.worldName)) {
 			EnderDragon mob = (EnderDragon) event.getEntity();
 			//Bukkit.getConsoleSender().sendMessage("Vida: " + mob.getHealth() + "-" + event.getFinalDamage());;
@@ -65,7 +71,7 @@ public class DragonDelEnd implements Listener {
 			else if(mob.getScoreboardTags().contains("Fase 5") & mob.getHealth()/mob.getMaxHealth() < 5.0/10) {
 				mob.removeScoreboardTag("Fase 5");
 				mob.addScoreboardTag("Fase 6");
-				summonCirculo(mob.getWorld(),"EnderCrystal",true,0);
+				ataques(4, mob.getWorld());
 			}
 			else if(mob.getScoreboardTags().contains("Fase 6") & mob.getHealth()/mob.getMaxHealth() < 4.0/10) {
 				mob.removeScoreboardTag("Fase 6");
@@ -88,7 +94,7 @@ public class DragonDelEnd implements Listener {
 				mob.addScoreboardTag("Fase 10");
 				summonCirculo(mob.getWorld(),"Bob",true,-2);
 				summonCirculo(mob.getWorld(),"Rich",false,0);
-				summonCirculo(mob.getWorld(),"EnderCrystal",true,2);
+				ataques(4, mob.getWorld());
 				arreglarBossBar(mob);
 				mob.setMaxHealth(600);
 				mob.setHealth(mob.getHealth()+300);
@@ -119,18 +125,21 @@ public class DragonDelEnd implements Listener {
 		if(event.getDamager().getType().equals(EntityType.FIREBALL)) {
 			Fireball fireball = (Fireball) event.getDamager();
 			if(fireball.getShooter() instanceof Ghast & !hasBeenPreviouslyDragonKilled() & fireball.getWorld().getName().equals(DragonCustom.worldName))
-				if(event.getEntity() instanceof LivingEntity) {
+				if(event.getEntity() instanceof LivingEntity mob) {
 					event.setDamage(event.getDamage()*6);
-					LivingEntity mob = (LivingEntity) event.getEntity();
 					mob.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,100,10));
 				}
 		}
 		else if(event.getDamager().getType().equals(EntityType.ARROW) & event.getEntity().getScoreboardTags().contains("BatallaDragon")) {
 			Arrow arrow = (Arrow) event.getDamager();
-			if(arrow.getShooter() instanceof Skeleton) {
-				Skeleton esqueleto= (Skeleton) arrow.getShooter();
+			if(arrow.getShooter() instanceof Skeleton esqueleto) {
 				if(esqueleto.getScoreboardTags().contains("BatallaDragon"))
 					event.setCancelled(true);
+			}
+		}
+		if (event.getDamager() instanceof Fireball fb){
+			if (fb.getScoreboardTags().contains("inferno") && event.getEntity() instanceof Player){
+				event.setDamage(5000.0);
 			}
 		}
 		if(event.getDamager().getScoreboardTags().contains("BatallaDragon"))
@@ -178,7 +187,7 @@ public class DragonDelEnd implements Listener {
 	
 	private static Skeleton InvocarRich(Location cords) {
 		Skeleton mob = (Skeleton) cords.getWorld().spawnEntity(cords, EntityType.SKELETON);
-		MobSpawning.Rich2012((Skeleton) mob);
+		MobSpawning.Rich2012(mob);
 		mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING,Integer.MAX_VALUE,5));
 		mob.setGravity(false);
 		mob.setPersistent(true);
@@ -189,16 +198,16 @@ public class DragonDelEnd implements Listener {
 			@Override
 			public void run() {
 				mob.setAI(true);
-				CargarEntidades.AutoTrack((Mob) mob);
+				CargarEntidades.AutoTrack(mob);
 			}
 		}.runTaskLater(DragonCustom.plugin, 20*8);
-		WitherBoss.SkeletonMinionWitherBoss((Mob) mob);
+		WitherBoss.SkeletonMinionWitherBoss(mob);
 		return mob;
 	}
 	
 	private static WitherSkeleton InvocarBob(Location cords) {
 		WitherSkeleton mob = (WitherSkeleton) cords.getWorld().spawnEntity(cords, EntityType.WITHER_SKELETON);
-		MobSpawning.Bob((WitherSkeleton) mob);
+		MobSpawning.Bob(mob);
 		mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING,Integer.MAX_VALUE,5));
 		mob.setPersistent(true);
 		mob.setRemoveWhenFarAway(false);
@@ -209,7 +218,7 @@ public class DragonDelEnd implements Listener {
 			@Override
 			public void run() {
 				mob.setAI(true);
-				CargarEntidades.AutoTrack((Mob) mob);
+				CargarEntidades.AutoTrack(mob);
 			}
 		}.runTaskLater(DragonCustom.plugin, 20*8);
 		return mob;
@@ -234,8 +243,7 @@ public class DragonDelEnd implements Listener {
 		if(event.getEntityType().equals(EntityType.ENDER_DRAGON)) {
 			for(Entity entidad : event.getEntity().getWorld().getEntities()) {
 				if(entidad.getScoreboardTags().contains("BatallaDragon")) {
-					if(entidad instanceof LivingEntity) {
-						LivingEntity entidadVida = (LivingEntity) entidad;
+					if(entidad instanceof LivingEntity entidadVida) {
 						entidadVida.setHealth(0);
 					}
 				}
@@ -257,7 +265,8 @@ public class DragonDelEnd implements Listener {
 		World end = Bukkit.getServer().getWorld(DragonCustom.worldName);
     	if(end !=null) {
 	    	DragonBattle batalla = end.getEnderDragonBattle();
-	    	return batalla.hasBeenPreviouslyKilled();
+			return true;
+	    	//return batalla.hasBeenPreviouslyKilled();
     	}
     	Bukkit.getConsoleSender().sendMessage("No se ha encontrado el mundo");
 	    return true;
@@ -266,7 +275,7 @@ public class DragonDelEnd implements Listener {
 	
 	@SuppressWarnings("deprecation")
 	public static void FixearDragon(EnderDragon dragon) {
-		if(!dragon.getDragonBattle().hasBeenPreviouslyKilled() && !dragon.getScoreboardTags().contains("CambiarEnd")) {
+		if(/*!dragon.getDragonBattle().hasBeenPreviouslyKilled() && !dragon.getScoreboardTags().contains("CambiarEnd")*/ true) {
 			dragon.setMaxHealth(1200);
 			dragon.setHealth(1200);
 			dragon.addScoreboardTag("CambiarEnd");
@@ -275,25 +284,8 @@ public class DragonDelEnd implements Listener {
 			arreglarBossBar(dragon);
 			autoAtaque(dragon);
 			autoAtaque2(dragon);
-			World end = dragon.getWorld();
-			int x, y, z;
-			for ( x=-200;x<=200;x++) {
-				  for(y=0;y<=255;y++) {
-					  for( z=-200;z<=200;z++) {
-						  Location cord = new Location(end,x,y,z);
-						  if(cord.getBlock().getType().equals(Material.OBSIDIAN)) {
-							  cord.getBlock().setType(Material.BEDROCK);
-						  }
-						  else if(cord.getBlock().getType().equals(Material.END_STONE)) {
-							  Random rand = new Random(); //instance of random class
-							  int int_random = rand.nextInt(2);
-							  if(int_random == 0) {
-								  cord.getBlock().setType(Material.END_STONE_BRICKS);
-							  }
-						  }
-					  }
-				  }
-			  }
+			cambiarSuelo(dragon);
+			cambiarPilar(dragon.getWorld());
 		}
 		else if(!dragon.getDragonBattle().hasBeenPreviouslyKilled()){
 			arreglarBossBar(dragon);
@@ -301,9 +293,87 @@ public class DragonDelEnd implements Listener {
 			autoAtaque2(dragon);
 		}
 	}
+
+	private static void cambiarSuelo(EnderDragon dragon) {
+		if(!dragon.getDragonBattle().hasBeenPreviouslyKilled()) {
+			World end = dragon.getWorld();
+			if (!DependencyManager.WorldEdit){
+				int x, y, z;
+				for(x=-200;x<=200;x++) {
+					for(y=0;y<=255;y++) {
+						for( z=-200;z<=200;z++) {
+							Location cord = new Location(end,x,y,z);
+							if(cord.getBlock().getType().equals(Material.END_STONE)) {
+								Random rand = new Random(); //instance of random class
+								int int_random = rand.nextInt(2);
+								if(int_random == 0) {
+									cord.getBlock().setType(Material.END_STONE_BRICKS);
+								}
+							}
+						}
+					}
+				}
+			}else {
+				Location loc1 = new Location(end, -300, 0, -300);
+				Location loc2 = new Location(end, 300, 255, 300);
+				FAWEHook.replaceBlocks(loc1, loc2, end, List.of(Material.END_STONE), List.of(Material.END_STONE, Material.END_STONE_BRICKS));
+			}
+			saveEnderCristalsToConfig(dragon);
+		}
+	}
+
+	private static void cambiarPilar(World end) {
+		if (!DependencyManager.WorldEdit){
+			int x, y, z;
+			for(x=-200;x<=200;x++) {
+				for(y=0;y<=255;y++) {
+					for( z=-200;z<=200;z++) {
+						Location cord = new Location(end,x,y,z);
+						if(cord.getBlock().getType().equals(Material.OBSIDIAN)) {
+							cord.getBlock().setType(Material.BEDROCK);
+						}
+					}
+				}
+			}
+		}else {
+			Location loc1 = new Location(end, -300, 0, -300);
+			Location loc2 = new Location(end, 300, 255, 300);
+			FAWEHook.replaceBlocks(loc1, loc2, end, List.of(Material.OBSIDIAN), List.of(Material.BEDROCK));
+		}
+	}
+
+	public static void saveEnderCristalsToConfig(Entity dragon){
+		FileConfiguration config = DragonCustom.plugin.getConfig();
+		List<Location> crystals = new ArrayList<>();
+		for (Entity e : dragon.getNearbyEntities(50, 100, 50)) {
+			if(e instanceof EnderCrystal) {
+				crystals.add(e.getLocation());
+			}
+		}
+		if(crystals == null || crystals.size() != 10) return;
+		config.set("Crystals.World", crystals.get(0).getWorld().getName());
+		for(int i=0;i<crystals.size();i++) {
+			int i2 = i+1;
+			config.set("Crystals.Cristal "+i2+".X", crystals.get(i).getX());
+			config.set("Crystals.Cristal "+i2+".Y", crystals.get(i).getY());
+			config.set("Crystals.Cristal "+i2+".Z", crystals.get(i).getZ());
+		}
+		DragonCustom.plugin.saveConfig();
+	}
+
+	public static List<Location> enderCristalsFromConfig(){
+		FileConfiguration config = DragonCustom.plugin.getConfig();
+		if (config.get("Crystals.World") == null) return null;
+		List<Location> crystals = new ArrayList<>();
+		for(int i=1;i<=10;i++) {
+			crystals.add(new Location(Bukkit.getWorld(config.getString("Crystals.World")), config.getDouble("Crystals.Cristal "+i+".X"), config.getDouble("Crystals.Cristal "+i+".Y"), config.getDouble("Crystals.Cristal "+i+".Z")));
+		}
+		return crystals;
+	}
 	
 	private static void arreglarBossBar(EnderDragon dragon) {
 		BossBar bar = dragon.getDragonBattle().getBossBar();
+		dragon.setCustomName(ChatColor.translateAlternateColorCodes('&', "☠&5&lENDER&f☠ &c&k&la&6&lKING&c&k&la"));
 		bar.setTitle(ChatColor.translateAlternateColorCodes('&', "☠&5&lENDER&f☠ &c&k&la&6&lKING&c&k&la"));
 		//bar.setTitle(ChatColor.translateAlternateColorCodes('&', "&4&lPermaSpect &6&lDemon &k&mLite"));
 		//bar.setTitle(ChatColor.translateAlternateColorCodes('&', "&a&ka&c&lPelans &4&l3D&a&ka")); 
@@ -323,12 +393,13 @@ public class DragonDelEnd implements Listener {
 		//Bukkit.getConsoleSender().sendMessage("Area effect");
 			//event.setCancelled(true);
 		for( Entity entidad : event.getAffectedEntities()) {
-			if(entidad instanceof Player) {
+			if(entidad instanceof Player player) {
 				if(event.getEntity().getScoreboardTags().contains("DragonBattleLevitar"))
-					((Player) entidad).addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,6));
+					player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,6));
 				if(event.getEntity().getScoreboardTags().contains("DragonBattleInstantDamage"))
-					((Player) entidad).damage(8);
-				
+					player.damage(8);
+				if (event.getEntity().getScoreboardTags().contains("DragonBattleQuemar"))
+					player.setFireTicks(20*30);
 			}
 				}
 		 //DragonBattleInstantDamage
@@ -351,15 +422,14 @@ public class DragonDelEnd implements Listener {
 				cloud.setRadius(radio.get(i));
 				cloud.setWaitTime(20*3);
 				cloud.setReapplicationDelay(20*5);
-				cloud.setBasePotionData(new PotionData(PotionType.LUCK));
+				cloud.addCustomEffect(new PotionEffect(PotionEffectType.UNLUCK, 1, 1, true, true), true);
 				loc.add(0,1,0);
 			}
 		}
 		else if(ataque == 2) {
 			Location loc = world.getEnderDragonBattle().getEndPortalLocation();
 			for(Entity entidad : world.getNearbyEntities(loc, 300, 300, 300)) {
-				if(entidad instanceof Player) {
-					Player jugador = (Player) entidad;
+				if(entidad instanceof Player jugador) {
 					if(jugador.getGameMode() == GameMode.SURVIVAL) {
 						jugador.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,20*5,0));
 						
@@ -372,8 +442,7 @@ public class DragonDelEnd implements Listener {
 						cloud.setRadius(3);
 						cloud.setWaitTime(20*5);
 						cloud.setReapplicationDelay(10); //0.5 segundos
-						cloud.setBasePotionData(new PotionData(PotionType.LUCK));
-						//cloud.setBasePotionData(new PotionData(PotionType.INSTANT_DAMAGE,false,true)); //Cuidado, afecta tambien a otros mobs!
+						cloud.addCustomEffect(new PotionEffect(PotionEffectType.UNLUCK, 1, 1, true, true), true);
 					}
 				}
 			}
@@ -381,8 +450,7 @@ public class DragonDelEnd implements Listener {
 		else if(ataque ==3) {
 			Location loc = world.getEnderDragonBattle().getEndPortalLocation();
 			for(Entity entidad : world.getNearbyEntities(loc, 300, 300, 300)) {
-				if(entidad instanceof Player) {
-					Player jugador = (Player) entidad;
+				if(entidad instanceof Player jugador) {
 					if(jugador.getGameMode() == GameMode.SURVIVAL) {
 						Endermite endermite =(Endermite) world.spawnEntity(jugador.getLocation(), EntityType.ENDERMITE);
 						endermite.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,20*10,4));
@@ -394,7 +462,9 @@ public class DragonDelEnd implements Listener {
 			world.spawnEntity(loc, EntityType.ENDERMITE);
 		}
 		else if(ataque ==4) { //No es como tal un ataque, sino parte de una fase.
-			summonCirculo(world,"EnderCrystal",true,0);
+			for (Location loc : enderCristalsFromConfig()) {
+				loc.getWorld().spawnEntity(loc, EntityType.ENDER_CRYSTAL);
+			}
 		}
 		else if(ataque ==5) {
 			summonCirculo(world,"TNT",false,0);
@@ -405,9 +475,9 @@ public class DragonDelEnd implements Listener {
 	@EventHandler
     public void onTnTExplode (EntityExplodeEvent e) {
 		if(e.getEntity().getScoreboardTags().contains("BloquesConGravedad")) {
-			double x = 0;
-	        double y = 0;
-	        double z = 0;
+			double x;
+	        double y;
+	        double z;
 	        Location eLoc;
 	        if(e.getEntity() == null){
 	            eLoc = e.getLocation();
@@ -422,7 +492,7 @@ public class DragonDelEnd implements Listener {
 	            y = (bLoc.getY() - eLoc.getY())*1.5 + 2.5;
 	            z = (bLoc.getZ() - eLoc.getZ())*1.5;
 	            
-	            FallingBlock fb = w.spawnFallingBlock(bLoc, b.getType(), (byte)b.getData());
+	            FallingBlock fb = w.spawnFallingBlock(bLoc, b.getType(), b.getData());
 	            fb.setDropItem(true);
 	            fb.setVelocity(new Vector(x,y,z));
 	            
@@ -442,38 +512,34 @@ public class DragonDelEnd implements Listener {
 		}
 		cord.setY(world.getEnderDragonBattle().getEndPortalLocation().getY()+14);
 		List<Integer> listX, listZ;
+		Integer[] cordX;
+		Integer[] cordZ;
 		if(!grande) {
-			Integer[] cordX = {0,7,10,7,0,-7,-10,-7};
-	    	Integer[] cordZ = {-9,-6,0,7,10,7,0,-6};
-	    	listX = Arrays.asList(cordX);
-	    	listZ = Arrays.asList(cordZ);
+			cordX = new Integer[]{0, 7, 10, 7, 0, -7, -10, -7};
+			cordZ = new Integer[]{-9, -6, 0, 7, 10, 7, 0, -6};
 		}
 		else {
-			Integer[] cordX = {24,12,-2,-24,-28,-22,-1,12,24,29};
-	    	Integer[] cordZ = {15,26,28,15,0,-14,-28,-25,-15,0};
-	    	listX = Arrays.asList(cordX);
-	    	listZ = Arrays.asList(cordZ);
+			cordX = new Integer[]{24, 12, -2, -24, -28, -22, -1, 12, 24, 29};
+			cordZ = new Integer[]{15, 26, 28, 15, 0, -14, -28, -25, -15, 0};
 		}
-    	Location copy = cord.clone().add(0, altura, 0);
+		listX = Arrays.asList(cordX);
+		listZ = Arrays.asList(cordZ);
+		Location copy = cord.clone().add(0, altura, 0);
     	for(int i=0;i<listX.size();i++) {
     		cord = copy.clone();
     		cord.setX(listX.get(i)+copy.getX());
     		cord.setZ(listZ.get(i)+copy.getZ());
-    		if(caso.equals("Rich"))
-    			InvocarRich(cord);
-    		else if(caso.equals("Bob"))
-    			InvocarBob(cord);
-    		else if(caso.equals("TNT")) {
-    			TNTPrimed tnt = (TNTPrimed) world.spawnEntity(cord, EntityType.PRIMED_TNT);
-        		tnt.setFuseTicks(20*5);
-        		tnt.addScoreboardTag("BloquesConGravedad");
-    		}
-    		else if(caso.equals("EnderCrystal"))
-    			world.spawnEntity(cord, EntityType.ENDER_CRYSTAL);
-    		else if(caso.equals("InvocarPhantomRich"))
-    			InvocarPhantomRich(cord);
-    		else if(caso.equals("InvocarPhantomBob"))
-    			InvocarPhantomBob(cord);
+			switch (caso) {
+				case "Rich" -> InvocarRich(cord);
+				case "Bob" -> InvocarBob(cord);
+				case "TNT" -> {
+					TNTPrimed tnt = (TNTPrimed) world.spawnEntity(cord, EntityType.PRIMED_TNT);
+					tnt.setFuseTicks(20 * 5);
+					tnt.addScoreboardTag("BloquesConGravedad");
+				}
+				case "InvocarPhantomRich" -> InvocarPhantomRich(cord);
+				case "InvocarPhantomBob" -> InvocarPhantomBob(cord);
+			}
     	}
 	}
 	
@@ -481,7 +547,7 @@ public class DragonDelEnd implements Listener {
     public void ExplotarEnderCrystal(EntityDamageEvent event) {
     	if(event.getEntityType().equals(EntityType.ENDER_CRYSTAL) && event.getEntity().getWorld().getName().equals(DragonCustom.worldName)) {
     		DragonBattle batalla = event.getEntity().getWorld().getEnderDragonBattle();
-    		if(!batalla.hasBeenPreviouslyKilled()) {
+    		if(/*!batalla.hasBeenPreviouslyKilled()*/ true) {
 	    		EnderCrystal entidad = (org.bukkit.entity.EnderCrystal) event.getEntity();
 	    		if(entidad.isShowingBottom()) {
 		    		Random rand = new Random(); //instance of random class
@@ -510,8 +576,7 @@ public class DragonDelEnd implements Listener {
 				boolean hayJugador = false;
 				//Bukkit.getConsoleSender().sendMessage("Ataque de tnt en: " + ataqueTNT);
 				for(Entity entidad :dragon.getNearbyEntities(300, 300, 300)) 
-					if(entidad instanceof Player) {
-						Player jugador = (Player) entidad;
+					if(entidad instanceof Player jugador) {
 						hayJugador = true;
 						if(jugador.getGameMode() == GameMode.SURVIVAL)
 							hayJugador = true;
@@ -527,7 +592,7 @@ public class DragonDelEnd implements Listener {
 						ataqueCentro = 120 + rand.nextInt(80) - 39; 
 					}
 					if(ataqueTNT--==0) { //Ataque de TNT
-						summonCirculo(dragon.getWorld(),"TNT",false,0);
+						ataques(5, dragon.getWorld());
 						ataqueTNT = 30 + rand.nextInt(30) - 14; 
 					}
 					if(ataqueEndermite--==0) { //Spawnea Endermite
@@ -564,7 +629,7 @@ public class DragonDelEnd implements Listener {
 						break;
 					}
 					if(ent instanceof EnderDragon) {
-						if(ent.getScoreboardTags().contains("etapa_final")) {
+						if(ent.getScoreboardTags().contains("Fase 10")) {
 							renderDra = true;
 							break;
 						}
@@ -755,7 +820,7 @@ public class DragonDelEnd implements Listener {
 								if(b) break;
 							}
 							TNTPrimed tnt = (TNTPrimed)loc.getWorld().spawnEntity(loc, EntityType.PRIMED_TNT);
-							tnt.getScoreboardTags().add("realista");
+							tnt.getScoreboardTags().add("BloquesConGravedad");
 							tnt.setFuseTicks(0);
 						}
 					}.runTask(DragonCustom.plugin);
@@ -773,8 +838,7 @@ public class DragonDelEnd implements Listener {
 					Location tempLoc = ent.getLocation();
 					tempLoc.setY(tempLoc.getY()+15);
 					TNTPrimed tnt = (TNTPrimed)world.spawnEntity(tempLoc, EntityType.PRIMED_TNT);
-					tnt.getScoreboardTags().add("realista");
-					tnt.getScoreboardTags().add("Mystic_Mob");
+					tnt.getScoreboardTags().add("BloquesConGravedad");
 					tnt.setFuseTicks(30);
 					tnt.setVelocity(new Vector(0,-0.5,0));
 				}
@@ -792,7 +856,16 @@ public class DragonDelEnd implements Listener {
 					targets.add(ent.getLocation());
 				}
 			}
+
+			Scoreboard test = DragonCustom.plugin.getServer().getScoreboardManager().getMainScoreboard();
+			Team teamColor = null;
+			teamColor = test.getTeam("Inferno_Ball");
+			if (teamColor == null){
+				teamColor = test.registerNewTeam("Inferno_Ball");
+				teamColor.color(NamedTextColor.DARK_RED);
+			}
 			for(Location target : targets){
+				Team finalTeamColor = teamColor;
 				new BukkitRunnable() {
 					@Override
 					public void run() {
@@ -801,8 +874,10 @@ public class DragonDelEnd implements Listener {
 						Vector dragonV = new Vector(dragonLoc.getX(), dragonLoc.getY(), dragonLoc.getZ());
 						Vector targetV = new Vector(target.getX(), target.getY(), target.getZ());
 						Vector vec = targetV.subtract(dragonV);
+						fireball.setGlowing(true);
 						fireball.setDirection(vec);
-						fireball.getScoreboardTags().add("ataque2");
+						fireball.getScoreboardTags().add("inferno");
+						finalTeamColor.addEntity(fireball);
 					}
 				}.runTask(DragonCustom.plugin);
 			}
@@ -847,8 +922,7 @@ public class DragonDelEnd implements Listener {
 							FallingBlock fb = cord.getWorld().spawnFallingBlock(cord, Material.COBBLESTONE.createBlockData());
 							fb.setHurtEntities(true);
 							fb.setDropItem(false);
-							fb.getScoreboardTags().add("cancelar");
-							fb.getScoreboardTags().add("rain_block");
+							fb.getScoreboardTags().add("lluvia_Block");
 						}
 					}
 				}

@@ -1,7 +1,5 @@
 package pelans;
 
-import java.io.File;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -9,37 +7,33 @@ import org.bukkit.entity.Entity;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
+import pelans.Util.DependencyManager;
+import pelans.commands.DragonCommand;
 import pelans.dragon.CargarEntidades;
 import pelans.dragon.DragonDelEnd;
+
+import java.io.File;
 
 
 public class DragonCustom extends JavaPlugin {
 	public static DragonCustom plugin;
-	private static PluginDescriptionFile pdffile;
-	public static String version;
-	public static String nombre;
+	private final PluginDescriptionFile pdffile = getDescription();
+	public final String version = pdffile.getVersion();
+	public final String nombre = ChatColor.YELLOW+"["+ChatColor.BLUE+pdffile.getName()+ChatColor.YELLOW+"] "; //[MiPlugin] Amarillo, Azul, Amarillo
 	public static String worldName;
-	
-	@Override
-	public void onLoad() {
 
-		
-	}
 	public void onEnable() {
 		
 		plugin = this;
-		pdffile = plugin.getDescription();
-		version = pdffile.getVersion();
-		nombre = ChatColor.YELLOW+"["+ChatColor.BLUE+pdffile.getName()+ChatColor.YELLOW+"] "; //[MiPlugin] Amarillo, Azul, Amarillo
 		
 		Bukkit.getConsoleSender().sendMessage(nombre+ChatColor.WHITE+" Activando plugin (version: "+ChatColor.RED+version+ChatColor.WHITE+")");
 		
-		
-		
 		registerConfig();
+		DependencyManager.checkPluginsDependencies();
 		registerEvents();
-		
+		registerCommands();
 		
 		worldName = this.getConfig().getString("Config.mundo");
 		
@@ -50,15 +44,19 @@ public class DragonCustom extends JavaPlugin {
 				CargarEntidades.analizarEntidad(entidad);
 			}
 		}
-		
+
 		
 		Bukkit.getConsoleSender().sendMessage(nombre+ChatColor.WHITE+" Ha sido activado (version: "+ChatColor.RED+version+ChatColor.WHITE+")");
 	}
 			
 	
 	public void onDisable() {
-		
-		
+		Scoreboard test = DragonCustom.plugin.getServer().getScoreboardManager().getMainScoreboard();
+		Team teamColor;
+		teamColor = test.getTeam("Inferno_Ball");
+		if (teamColor != null){
+			teamColor.unregister();
+		}
 	}
 	
 	
@@ -75,5 +73,9 @@ public class DragonCustom extends JavaPlugin {
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvents(new DragonDelEnd(), this);
 		pm.registerEvents(new CargarEntidades(), this);
+	}
+
+	public void registerCommands(){
+		this.getCommand("dragon").setExecutor(new DragonCommand());
 	}
 }

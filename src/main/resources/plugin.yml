@@ -1,4 +1,9 @@
 main: pelans.DragonCustom
 version: 0.0.1.0
 name: DragonCustom
-api-version: 1.13
+api-version: 1.18
+softdepend: [ ProtocolLib, WorldEdit, FastAsyncWorldEdit ]
+
+commands:
+  dragon:
+    description: test dragon.
